@@ -1,5 +1,3 @@
-# Password_Strength_Analyzer
-
 # 🔐 Password Strength Analyzer
 
 A realistic password strength analyzer that goes beyond counting characters.  
