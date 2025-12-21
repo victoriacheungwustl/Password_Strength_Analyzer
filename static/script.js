@@ -32,7 +32,7 @@ form.addEventListener("submit", async (e) => {
         const response = await fetch("/analyze", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password }),
+            body: JSON.stringify({ password, threat_model: "offline" }),
         });
         const data = await response.json();
         updateUI(data);
@@ -40,7 +40,13 @@ form.addEventListener("submit", async (e) => {
 });
 
 function updateUI(data) {
-    const { entropy, category, feedback, details } = data;
+    const {
+        entropy,
+        category,
+        feedback,
+        estimated_crack_time,
+        details
+    } = data;
     const colorMap = { 
         "Very Weak": "#ef4444", 
         "Weak": "#f97316", 
@@ -54,7 +60,24 @@ function updateUI(data) {
     fillBar.style.width = `${barPercent}%`;
     fillBar.style.backgroundColor = color;
 
-    resultText.innerHTML = `${category} <span class="text-gray-400 text-sm">(Entropy: ${entropy})</span>`;
+    // resultText.innerHTML = `
+    //     ${category}
+    //     <span class="text-gray-400 text-sm block mt-1">
+    //         Offline crack estimate: <strong>${estimated_crack_time.offline_attack}</strong><br>
+    //         Online crack estimate: <strong>${estimated_crack_time.online_attack}</strong>
+    //     </span>
+    // `;
+
+    // resultText.innerHTML = `${category} <span class="text-gray-400 text-sm">(Entropy: ${entropy})</span>`;
+    resultText.innerHTML = `
+    ${category}
+    <span class="text-gray-400 text-sm block mt-1">
+        Offline crack estimate: <strong>${estimated_crack_time.offline_attack}</strong><br>
+        Online crack estimate: <strong>${estimated_crack_time.online_attack}</strong>
+    </span>
+    <span class="text-gray-400 text-sm">(Entropy: ${entropy})</span>
+    `;
+
     
     // Feedback Logic - Shows "Excellent" for Very Strong, otherwise shows tips
     if (category === "Very Strong") {

@@ -1,6 +1,11 @@
 import math
 import re
 import os
+from typing import Dict
+
+OFFLINE_GUESSES_PER_SECOND = 1e10   
+ONLINE_GUESSES_PER_HOUR = 100      
+
 
 def normalize_password(password: str) -> str:
     """Translates leetspeak to plain text for dictionary checking."""
@@ -9,6 +14,9 @@ def normalize_password(password: str) -> str:
     for char, replacement in leet_map.items():
         lowered = lowered.replace(char, replacement)
     return re.sub(r'[^a-z]', '', lowered)
+
+normalize_password("Password123")
+normalize_password("P@ssw0rd123")
 
 def load_dictionary():
     # Attempt to load local words file or use a fallback list
@@ -21,7 +29,22 @@ def load_dictionary():
 
 DICTIONARY = load_dictionary()
 
-def analyze_password(password: str) -> dict:
+def format_time(seconds: float) -> str:
+    if seconds < 60:
+        return "seconds"
+    minutes = seconds / 60
+    if minutes < 60:
+        return "minutes"
+    hours = minutes / 60
+    if hours < 24:
+        return "hours"
+    days = hours / 24
+    if days < 365:
+        return "days"
+    years = days / 365
+    return "years"
+
+def analyze_password(password: str, threat_model: str = "offline") -> Dict:
     pw_lower = password.lower()
     normalized = normalize_password(password)
     length = len(password)
@@ -54,6 +77,13 @@ def analyze_password(password: str) -> dict:
 
     adjusted_entropy = max(base_entropy - penalty, 0)
 
+
+    # 2.5 crack time estimation
+    estimated_guesses = 2 ** adjusted_entropy
+
+    offline_seconds = estimated_guesses / OFFLINE_GUESSES_PER_SECOND
+    online_hours = estimated_guesses / ONLINE_GUESSES_PER_HOUR
+
     # 3. Categorization (14-char threshold for Very Strong)
     if adjusted_entropy < 30: 
         category = "Very Weak"
@@ -81,6 +111,11 @@ def analyze_password(password: str) -> dict:
         "entropy": round(adjusted_entropy, 2),
         "category": category,
         "feedback": feedback,
+        "threat_model": threat_model,
+        "estimated_crack_time": {
+            "offline_attack": format_time(offline_seconds),
+            "online_attack": format_time(online_hours * 3600)
+        },
         "details": {
             "dictionary_hit": dictionary_hit,
             "sequential": sequential,
